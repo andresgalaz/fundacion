@@ -1,0 +1,6 @@
+requests
+pandas
+fsspec
+s3fs
+openpyxl
+pymysql
