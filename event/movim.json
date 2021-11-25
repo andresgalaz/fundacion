@@ -1,0 +1,43 @@
+{
+    "version": "2.0",
+    "routeKey": "POST /movim",
+    "rawPath": "/movim",
+    "rawQueryString": "institucion=1&fecha_inicio=2020-03-01&fecha_fin=2020-05-01",
+    "headers": {
+        "accept": "*/*",
+        "accept-encoding": "gzip, deflate, br",
+        "cache-control": "no-cache",
+        "content-length": "0",
+        "host": "0kz13emnrh.execute-api.us-east-1.amazonaws.com",
+        "postman-token": "e0ccab8b-b5a0-4710-9f98-03f6f8c6947a",
+        "user-agent": "PostmanRuntime/7.28.4",
+        "x-amzn-trace-id": "Root=1-619f9c1a-5dc0bf0a5f9777c420dd6639",
+        "x-forwarded-for": "207.248.199.134",
+        "x-forwarded-port": "443",
+        "x-forwarded-proto": "https"
+    },
+    "queryStringParameters": {
+        "fecha_fin": "2020-05-01",
+        "fecha_inicio": "2020-03-01",
+        "institucion": "1"
+    },
+    "requestContext": {
+        "accountId": "588550057682",
+        "apiId": "0kz13emnrh",
+        "domainName": "0kz13emnrh.execute-api.us-east-1.amazonaws.com",
+        "domainPrefix": "0kz13emnrh",
+        "http": {
+            "method": "POST",
+            "path": "/movim",
+            "protocol": "HTTP/1.1",
+            "sourceIp": "207.248.199.134",
+            "userAgent": "PostmanRuntime/7.28.4"
+        },
+        "requestId": "JXVUNiyNoAMEMNA=",
+        "routeKey": "POST /movim",
+        "stage": "$default",
+        "time": "25/Nov/2021:14:22:18 +0000",
+        "timeEpoch": 1637850138775
+    },
+    "isBase64Encoded": false
+}

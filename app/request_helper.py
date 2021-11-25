@@ -54,3 +54,45 @@ def multipart(event):
         return multipart_content
     # Si no es multipart, no retorna nada
     pass
+
+
+from datetime import datetime, date
+
+# from decimal import Decimal
+import globalUtil as u
+
+
+def getParam(event, cParamName, obligatorio=False, tipo=None):
+    if "queryStringParameters" in event:
+        params = event["queryStringParameters"]
+    else:
+        params = event
+
+    # Verifica existencia parámetro
+    if not cParamName in params:
+        if obligatorio:
+            raise AssertionError("Falta parámetro: " + cParamName)
+        return None
+
+    if tipo is int or tipo is float:
+        n = u.str2number(params[cParamName])
+        if not n:
+            raise AssertionError("Parámetro '{}' debe ser numérico".format(cParamName))
+        return n
+
+    if tipo is datetime or tipo is date:
+        d = u.str2date(params[cParamName])
+        if not d:
+            raise AssertionError("Parámetro '{}' debe ser una fecha".format(cParamName))
+        return d
+
+    if tipo is u.periodo:
+        d = u.str2periodo(params[cParamName])
+        if not d:
+            raise AssertionError("Parámetro '{}' debe ser una fecha".format(cParamName))
+        return d
+
+    if tipo is bool:
+        return u.str2bool(params[cParamName])
+
+    return params[cParamName]

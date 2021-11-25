@@ -6,13 +6,29 @@ __version__ = "v1.1"
 
 import boto3
 import csv
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from decimal import Decimal
 import io
 import json
 import numpy
 import pandas
 import re
+
+
+class periodo(date):
+    pass
+
+    def inicio(self):
+        return date(self.year, self.month, 1)
+
+    def termino(self):
+        m = self.month + 1
+        y = self.year
+        if m > 12:
+            m = 1
+            y += 1
+        d = date(y, m, 1) - timedelta(days=1)
+        return d
 
 
 def addMonth(fecha, delta):
@@ -115,6 +131,27 @@ def objet2str(o):
     return o
 
 
+def str2bool(o):
+    if o == None:
+        return False
+    if type(o) == int or type(o) == float:
+        return bool(o)
+    if type(o) == str:
+        o = o.upper()
+        if (
+            o == "1"
+            or o == "Y"
+            or o == "S"
+            or o == "YES"
+            or o == "SI"
+            or o == "VERDADERO"
+            or o == "TRUE"
+        ):
+            return True
+        return False
+    return bool(o)
+
+
 def str2date(cFecha):
     try:
         cFecha = cFecha.replace(".", "-").replace("/", "-")
@@ -143,6 +180,36 @@ def str2number(cNum):
         return int(cNum)
     except:
         return None
+
+
+def str2periodo(cFecha):
+    try:
+        dt = None
+        cFecha = cFecha.replace(".", "-").replace("/", "-")
+        if re.search(
+            "^([1-9]|0[1-9]|1[0-9]|2[0-9]|3[0-1])(\.|-|/)([1-9]|0[1-9]|1[0-2])(\.|-|/)([0-9][0-9]|19[0-9][0-9]|20[0-9][0-9])$",
+            cFecha,
+        ):
+            dt = datetime.strptime(cFecha, "%d-%m-%Y")
+        elif re.search(
+            "^([1-9]|0[1-9]|1[0-2])(\.|-|/)([0-9][0-9]|19[0-9][0-9]|20[0-9][0-9])$",
+            cFecha,
+        ):
+            dt = datetime.strptime(cFecha, "%m-%Y")
+        elif re.search(
+            "^([0-9][0-9]|19[0-9][0-9]|20[0-9][0-9])(\.|-|/)([1-9]|0[1-9]|1[0-2])(\.|-|/)([1-9]|0[1-9]|1[0-9]|2[0-9]|3[0-1])$",
+            cFecha,
+        ):
+            dt = datetime.strptime(cFecha, "%Y-%m-%d")
+        elif re.search(
+            "^([0-9][0-9]|19[0-9][0-9]|20[0-9][0-9])(\.|-|/)([1-9]|0[1-9]|1[0-2])$",
+            cFecha,
+        ):
+            dt = datetime.strptime(cFecha, "%Y-%m")
+        if dt:
+            return periodo(dt.year, dt.month, 1)
+    except:
+        pass
 
 
 def strToS3(bucketS3, filename, contenido):

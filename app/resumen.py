@@ -5,7 +5,7 @@ __email__ = "andres.galaz@gmail.com"
 __version__ = "v1.0"
 
 import re
-from request_helper import multipart
+from request_helper import multipart, getParam
 from unicodedata import normalize
 
 # Bibliorecas propias
@@ -165,34 +165,11 @@ def grabaResumen(cnxDb, cUsuario, nInstitucion, nBanco, nArchivo, cArchivoS3):
 
 
 def upload(event):
-    cnxDb = db.conecta()
-    if not cnxDb:
-        raise AssertionError("Error al conectar a la base de datos")
-
     params = multipart(event)
-    # Institucion
-    if not "institucion" in params:
-        raise AssertionError("Falta parámetro: institucion")
-    nInstitucion = u.str2number(params["institucion"])
-    if not nInstitucion:
-        raise AssertionError("Parámetro 'institucion' debe ser numérico")
-    if not "usuario" in params:
-        raise AssertionError("Falta parámetro: usuario")
 
-    # Banco
-    if not "banco" in params:
-        raise AssertionError("Falta parámetro: banco")
-    nBanco = u.str2number(params["banco"])
-    if not nBanco:
-        raise AssertionError("Parámetro 'banco' debe ser numérico")
-
-    # Usuario
-    if not "usuario" in params:
-        raise AssertionError("Falta parámetro: usuario")
-
-    cUsuario = params["usuario"]
-    if not "archivo" in params:
-        raise AssertionError("Falta upload 'archivo'")
+    nInstitucion = getParam(params, "institucion", obligatorio=True, tipo=int)
+    cUsuario = getParam(params, "usuario", obligatorio=True, tipo=str)
+    nBanco = getParam(params, "banco", obligatorio=True, tipo=int)
 
     contenido = params["archivo"]["contenido"]
     fileName = params["archivo"]["file_name"]
@@ -202,6 +179,7 @@ def upload(event):
     # Graba archivo en S3
     u.strToS3(BUCKET_S3, cArchivoS3, contenido.encode("iso-8859-1"))
 
+    cnxDb = db.conecta()
     # Crea un registro asociado en la BD
     fArchivo = dm.insArchivo(
         cnxDb,

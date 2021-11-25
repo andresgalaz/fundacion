@@ -1,0 +1,42 @@
+{
+    "version": "2.0",
+    "routeKey": "POST /total_cta_contab",
+    "rawPath": "/total_cta_contab",
+    "rawQueryString": "institucion=1&periodo=2020-03",
+    "headers": {
+        "accept": "*/*",
+        "accept-encoding": "gzip, deflate, br",
+        "cache-control": "no-cache",
+        "content-length": "0",
+        "host": "0kz13emnrh.execute-api.us-east-1.amazonaws.com",
+        "postman-token": "3765be76-3dc2-4fdc-b7fb-b3a98563c553",
+        "user-agent": "PostmanRuntime/7.28.4",
+        "x-amzn-trace-id": "Root=1-619fe308-25e621267175f5304774f24a",
+        "x-forwarded-for": "207.248.199.134",
+        "x-forwarded-port": "443",
+        "x-forwarded-proto": "https"
+    },
+    "queryStringParameters": {
+        "institucion": "1",
+        "periodo": "2020-03"
+    },
+    "requestContext": {
+        "accountId": "588550057682",
+        "apiId": "0kz13emnrh",
+        "domainName": "0kz13emnrh.execute-api.us-east-1.amazonaws.com",
+        "domainPrefix": "0kz13emnrh",
+        "http": {
+            "method": "POST",
+            "path": "/total_cta_contab",
+            "protocol": "HTTP/1.1",
+            "sourceIp": "207.248.199.134",
+            "userAgent": "PostmanRuntime/7.28.4"
+        },
+        "requestId": "JYBpSjdgoAMEPbw=",
+        "routeKey": "POST /total_cta_contab",
+        "stage": "$default",
+        "time": "25/Nov/2021:19:24:56 +0000",
+        "timeEpoch": 1637868296043
+    },
+    "isBase64Encoded": false
+}
