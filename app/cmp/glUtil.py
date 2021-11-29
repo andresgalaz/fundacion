@@ -14,6 +14,8 @@ import numpy
 import pandas
 import re
 
+from cmp.appError import AppError
+
 
 class periodo(date):
     pass
@@ -290,9 +292,7 @@ def parseCsv(cBucketName, cFileName):
     elif sAnalisis.count("\\t") >= lineas:
         separador = "\t"
     else:
-        raise AssertionError(
-            "Separador de columnas desconocido en archivo:" * cFileName
-        )
+        raise AppError("Separador de columnas desconocido en archivo:" * cFileName)
 
     df = pandas.read_csv(io.BytesIO(contenido), sep=separador, header=None)
     # return df

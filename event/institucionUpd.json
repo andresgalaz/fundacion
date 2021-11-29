@@ -1,0 +1,42 @@
+{
+    "version": "2.0",
+    "routeKey": "POST /institucion_upd",
+    "rawPath": "/institucion_upd",
+    "rawQueryString": "institucion=0&nombre=Compustrom",
+    "headers": {
+        "accept": "*/*",
+        "accept-encoding": "gzip, deflate, br",
+        "cache-control": "no-cache",
+        "content-length": "0",
+        "host": "0kz13emnrh.execute-api.us-east-1.amazonaws.com",
+        "postman-token": "e3d47994-8113-4710-b1e8-cfb6bbd8e4ac",
+        "user-agent": "PostmanRuntime/7.28.4",
+        "x-amzn-trace-id": "Root=1-61a1873c-53de8ace535a637168f240e6",
+        "x-forwarded-for": "207.248.199.134",
+        "x-forwarded-port": "443",
+        "x-forwarded-proto": "https"
+    },
+    "queryStringParameters": {
+        "institucion": "0",
+        "nombre": "Compustrom"
+    },
+    "requestContext": {
+        "accountId": "588550057682",
+        "apiId": "0kz13emnrh",
+        "domainName": "0kz13emnrh.execute-api.us-east-1.amazonaws.com",
+        "domainPrefix": "0kz13emnrh",
+        "http": {
+            "method": "POST",
+            "path": "/institucion_upd",
+            "protocol": "HTTP/1.1",
+            "sourceIp": "207.248.199.134",
+            "userAgent": "PostmanRuntime/7.28.4"
+        },
+        "requestId": "JcIRiiD0oAMEMXg=",
+        "routeKey": "POST /institucion_upd",
+        "stage": "$default",
+        "time": "27/Nov/2021:01:17:48 +0000",
+        "timeEpoch": 1637975868853
+    },
+    "isBase64Encoded": false
+}

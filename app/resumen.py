@@ -5,13 +5,13 @@ __email__ = "andres.galaz@gmail.com"
 __version__ = "v1.0"
 
 import re
-from request_helper import multipart, getParam
 from unicodedata import normalize
 
 # Bibliorecas propias
-import dataMng as dm
-import db
-import globalUtil as u
+import cmp.dataMng as dm
+import cmp.db as db
+import cmp.glUtil as u
+from cmp.requestHlp import multipart, getParam
 
 BUCKET_S3 = "fundaciones"
 
@@ -111,7 +111,7 @@ def grabaResumen(cnxDb, cUsuario, nInstitucion, nBanco, nArchivo, cArchivoS3):
             cCuenta = m[i][j + 1]
 
     if not cFundacion or not cCuenta:
-        raise AssertionError("No se encontró en el archivo Razón Social y/o Cuenta")
+        raise AppError("No se encontró en el archivo Razón Social y/o Cuenta")
 
     resp = buscaFila(
         m,
@@ -127,7 +127,7 @@ def grabaResumen(cnxDb, cUsuario, nInstitucion, nBanco, nArchivo, cArchivoS3):
     )
 
     if resp["fila"] < 0:
-        raise AssertionError("No se encontró encabezado de movimientos")
+        raise AppError("No se encontró encabezado de movimientos")
 
     ctaBanco = dm.leeCtaBanco(cnxDb, cCuenta=cCuenta)
     if ctaBanco:

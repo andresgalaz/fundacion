@@ -5,10 +5,25 @@ __email__ = "andres.galaz@gmail.com"
 __version__ = "v1.0"
 
 # Bibliorecas propias
-import dataMng as dm
-import db
-from request_helper import getParam
-from globalUtil import periodo
+from cmp.appError import AppError
+import cmp.dataMng as dm
+import cmp.db as db
+from cmp.requestHlp import getParam
+from cmp.glUtil import periodo
+
+
+def delete(event):
+    nCtaContab = getParam(event, "cta_contab", obligatorio=True, tipo=int)
+
+    cnxDb = db.conecta()
+    # se puede propocionar la id o el nombre de la cuenta contable
+    n = dm.delCtaContab(cnxDb, nCtaContab)
+    cnxDb.commit()
+    cnxDb.close()
+
+    if n == 0:
+        return "Registro no existe"
+    return "Registro eliminado correctamente"
 
 
 def lista(event):
@@ -40,3 +55,27 @@ def total(event):
         lisTotal = []
 
     return lisTotal
+
+
+def update(event):
+    nCtaContab = getParam(event, "cta_contab", tipo=int)
+    nInstitucion = getParam(event, "institucion", obligatorio=True, tipo=int)
+    cCodigo = getParam(event, "codigo", obligatorio=True)
+    cNombre = getParam(event, "nombre", obligatorio=True)
+
+    cnxDb = db.conecta()
+    if not dm.leeInstitucion(cnxDb, bUno=True, pInstitucion=nInstitucion):
+        raise AppError("No existe institución con ID={}".format(nInstitucion))
+
+    try:
+        dm.updCtaContab(cnxDb, nCtaContab, nInstitucion, cCodigo, cNombre)
+        cnxDb.commit()
+    except Exception as e:
+        cnxDb.rollback()
+        return str(e)
+
+    cnxDb.close()
+
+    if nCtaContab:
+        return "Registro actualizado correctamente"
+    return "Registro ingresado correctamente"

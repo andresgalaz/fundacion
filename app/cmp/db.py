@@ -6,6 +6,8 @@ __version__ = "v1.0"
 
 import pymysql
 
+from cmp.appError import AppError
+
 
 def conecta():
     try:
@@ -16,13 +18,13 @@ def conecta():
             database="db_fundacion",
         )
         if not cnxDb:
-            raise AssertionError("Error al conectar a la base de datos")
+            raise AppError("Error al conectar a la base de datos")
 
         print("conecta DB")
         return cnxDb
     except pymysql.Error as e:
         print(e)
-        raise AssertionError("Error inesperado al conectar: ") + str(e)
+        raise AppError("Error inesperado al conectar: ") + str(e)
 
 
 def close(cnxDb):

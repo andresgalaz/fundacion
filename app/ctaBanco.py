@@ -5,11 +5,10 @@ __email__ = "andres.galaz@gmail.com"
 __version__ = "v1.0"
 
 # Bibliorecas propias
-from datetime import date
-import dataMng as dm
-import db
-from globalUtil import periodo
-from request_helper import getParam
+import cmp.dataMng as dm
+import cmp.db as db
+from cmp.glUtil import periodo
+from cmp.requestHlp import getParam
 
 
 def saldo(event):

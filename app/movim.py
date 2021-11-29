@@ -7,10 +7,11 @@ __version__ = "v1.0"
 from datetime import date
 
 # Bibliorecas propias
-import dataMng as dm
-import db
-import globalUtil as u
-from request_helper import getParam
+from cmp.appError import AppError
+import cmp.dataMng as dm
+import cmp.db as db
+import cmp.glUtil as u
+from cmp.requestHlp import getParam
 
 
 def lista(event):
@@ -36,7 +37,7 @@ def lista(event):
         )
         if not arr:
             cnxDb.close()
-            raise AssertionError(
+            raise AppError(
                 "No existe cuenta contable '{}' asociada a la institución".format(
                     cCtaContab
                 )

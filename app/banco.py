@@ -5,9 +5,9 @@ __email__ = "andres.galaz@gmail.com"
 __version__ = "v1.0"
 
 # Bibliorecas propias
-import dataMng as dm
-import db
-import globalUtil as u
+import cmp.dataMng as dm
+import cmp.db as db
+import cmp.glUtil as u
 
 
 def lista(event):

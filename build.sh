@@ -4,4 +4,4 @@
 
 cd app
 fecha=$(date +"%Y%m%d_%H%M%S")
-zip ../fundacion_$fecha.zip *.py --exclude __init__.py 
+zip ../fundacion_$fecha.zip cmp/*.py *.py --exclude __init__.py 

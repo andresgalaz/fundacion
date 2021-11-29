@@ -4,8 +4,35 @@ __license__ = "LGPL"
 __email__ = "andres.galaz@gmail.com"
 __version__ = "v1.0"
 
-import db
-from globalUtil import periodo
+from cmp.appError import AppError
+import cmp.db as db
+from cmp.glUtil import periodo
+
+
+def delCtaContab(cnxDb, pCtaContab):
+    db.sqlExec(
+        "UPDATE tMovim SET fCtaContab = NULL WHERE fCtaContab=%s",
+        cnxDb=cnxDb,
+        params=(pCtaContab,),
+    )
+
+    (n, nId) = db.sqlExec(
+        "DELETE FROM tCtaContab WHERE pCtaContab=%s",
+        cnxDb=cnxDb,
+        params=(pCtaContab,),
+    )
+    # Cantidad registros eliminados
+    return n
+
+
+def delInstitucion(cnxDb, pInstitucion):
+    (n, nId) = db.sqlExec(
+        "UPDATE tInstitucion SET bEnable='0' WHERE pInstitucion=%s",
+        cnxDb=cnxDb,
+        params=(pInstitucion,),
+    )
+    # Cantidad registros update
+    return n
 
 
 def insArchivo(
@@ -75,7 +102,7 @@ def leeBanco(cnxDb, bUno=False, pBanco=None, cNombre=None):
         params = (cNombre,)
     else:
         if bUno:
-            raise AssertionError("No se indico ID ni Nombre para leer Banco")
+            raise AppError("No se indico ID ni Nombre para leer Banco")
         cWhe = " 1=1 "
         params = None
 
@@ -89,7 +116,7 @@ def leeBanco(cnxDb, bUno=False, pBanco=None, cNombre=None):
     if bUno == False:
         return arr
     if len(arr) > 1:
-        raise AssertionError("Se esperaba un solo registro al leer banco")
+        raise AppError("Se esperaba un solo registro al leer banco")
     return arr[0]
 
 
@@ -101,7 +128,7 @@ def leeCtaBanco(cnxDb, pCtaBanco=None, cCuenta=None):
         cWhe = " cCuenta = %s "
         params = (cCuenta,)
     else:
-        raise AssertionError("No se indico ID ni Cuenta para leer Cuenta Bancaria")
+        raise AppError("No se indico ID ni Cuenta para leer Cuenta Bancaria")
 
     arr = db.sqlQuery(
         "SELECT pCtaBanco, fInstitucion, fBanco, cNombre, cCuenta, tCreacion from tCtaBanco WHERE "
@@ -143,19 +170,19 @@ def leeCtaContab(
     if bUno == False:
         return arr
     if len(arr) > 1:
-        raise AssertionError("Se esperaba un solo registro al leer cuenta contable")
+        raise AppError("Se esperaba un solo registro al leer cuenta contable")
     return arr[0]
 
 
-def leeInstitucion(cnxDb, pInstitucion=None, cNombre=None):
+def leeInstitucion(cnxDb, bUno=False, pInstitucion=None, cNombre=None):
+    cWhe = " bEnable='1' "
+    params = ()
     if pInstitucion:
-        cWhe = " pInstitucion = %s "
-        params = (pInstitucion,)
+        cWhe += " AND pInstitucion = %s "
+        params += (pInstitucion,)
     elif cNombre:
-        cWhe = " cNombre = %s "
-        params = (cNombre,)
-    else:
-        raise AssertionError("No se indico ID ni Nombre para leer Institución")
+        cWhe += " AND cNombre = %s "
+        params += (cNombre,)
 
     arr = db.sqlQuery(
         "SELECT  pInstitucion, cNombre, tCreacion from tInstitucion WHERE " + cWhe,
@@ -164,7 +191,12 @@ def leeInstitucion(cnxDb, pInstitucion=None, cNombre=None):
     )
     if not arr:
         return None
-    return arr[0]
+    if bUno:
+        if len(arr) > 1:
+            raise AppError("No se indico ID ni Nombre para leer Institución")
+        return arr[0]
+
+    return arr
 
 
 def leeMovim(
@@ -296,3 +328,53 @@ def totalCtaContab(cnxDb, fInstitucion, pCtaContab=None, dPeriodo=None):
     if not arr:
         return None
     return arr
+
+
+def updCtaContab(cnxDb, pCtaContab, fInstitucion, cCodigo, cNombre):
+    if pCtaContab == None or pCtaContab <= 0:
+        arr = leeCtaContab(cnxDb=cnxDb, fInstitucion=fInstitucion, cCodigo=cCodigo)
+        if arr:
+            raise AppError("Ya existe una cuenta contable con el código: " + cCodigo)
+        # Si no existe se crea
+        (n, nId) = db.sqlExec(
+            "INSERT INTO tCtaContab( fInstitucion, cCodigo, cNombre ) VALUES ( %s, %s, %s )",
+            cnxDb=cnxDb,
+            params=(fInstitucion, cCodigo, cNombre),
+        )
+        return nId
+
+    (n, nId) = db.sqlExec(
+        "UPDATE tCtaContab set cCodigo = %s, cNombre = %s WHERE pCtaContab = %s",
+        cnxDb=cnxDb,
+        params=(cCodigo, cNombre, pCtaContab),
+    )
+    arr = leeCtaContab(cnxDb=cnxDb, fInstitucion=fInstitucion, cCodigo=cCodigo)
+    if len(arr) > 1:
+        raise AppError("Ya existe una cuenta contable con el código: " + cCodigo)
+
+    return n
+
+
+def updInstitucion(cnxDb, fInstitucion, cNombre):
+    if fInstitucion == None or fInstitucion <= 0:
+        arr = leeInstitucion(cnxDb=cnxDb, cNombre=cNombre)
+        if arr:
+            raise AppError("Ya existe una institucion con el nombre: " + cNombre)
+        # Si no existe se crea
+        (n, nId) = db.sqlExec(
+            "INSERT INTO tInstitucion( cNombre ) VALUES ( %s )",
+            cnxDb=cnxDb,
+            params=(cNombre),
+        )
+        return nId
+
+    (n, nId) = db.sqlExec(
+        "UPDATE tInstitucion set cNombre = %s WHERE pInstitucion = %s",
+        cnxDb=cnxDb,
+        params=(cNombre, fInstitucion),
+    )
+    arr = leeInstitucion(cnxDb=cnxDb, cNombre=cNombre)
+    if arr and len(arr) > 1:
+        raise AppError("Ya existe una institucion con el nombre: " + cNombre)
+
+    return n
