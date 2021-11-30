@@ -6,6 +6,7 @@ __version__ = "v1.0"
 
 import json
 import logging
+import traceback
 
 from cmp.appError import AppError
 import cmp.glUtil as u
@@ -19,6 +20,9 @@ import resumen
 
 
 PATH_BANCO = "/banco"
+PATH_CTA_BANCO = "/cta_banco"
+PATH_CTA_BANCO_UPD = "/cta_banco_upd"
+PATH_CTA_BANCO_DEL = "/cta_banco_del"
 PATH_CTA_CONTAB = "/cta_contab"
 PATH_CTA_CONTAB_UPD = "/cta_contab_upd"
 PATH_CTA_CONTAB_DEL = "/cta_contab_del"
@@ -42,18 +46,28 @@ def lambda_handler(event, context):
 
         if cRuta == PATH_BANCO:
             resp = {"records": banco.lista(event)}
+
+        elif cRuta == PATH_CTA_BANCO:
+            resp = {"records": ctaBanco.lista(event)}
+        elif cRuta == PATH_CTA_BANCO_DEL:
+            resp = {"records": ctaBanco.delete(event)}
+        elif cRuta == PATH_CTA_BANCO_UPD:
+            resp = {"records": ctaBanco.update(event)}
+
         elif cRuta == PATH_CTA_CONTAB:
             resp = {"records": ctaContab.lista(event)}
         elif cRuta == PATH_CTA_CONTAB_DEL:
             resp = {"records": ctaContab.delete(event)}
         elif cRuta == PATH_CTA_CONTAB_UPD:
             resp = {"records": ctaContab.update(event)}
+
         elif cRuta == PATH_INSTITUCION:
             resp = {"records": institucion.lista(event)}
         elif cRuta == PATH_INSTITUCION_DEL:
             resp = {"message": institucion.delete(event)}
         elif cRuta == PATH_INSTITUCION_UPD:
             resp = {"message": institucion.update(event)}
+
         elif cRuta == PATH_MOVIM:
             resp = {"records": movim.lista(event)}
         elif cRuta == PATH_SALDO_CTABANCO:
@@ -74,6 +88,7 @@ def lambda_handler(event, context):
 
     except Exception as e:
         log.error(e)
+        log.error(traceback.format_exc())
         resp = {"success": False, "message": "Error inesperado:" + str(e)}
 
     log.debug("lambda_handler:Término", resp)

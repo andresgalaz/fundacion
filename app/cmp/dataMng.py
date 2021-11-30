@@ -120,15 +120,19 @@ def leeBanco(cnxDb, bUno=False, pBanco=None, cNombre=None):
     return arr[0]
 
 
-def leeCtaBanco(cnxDb, pCtaBanco=None, cCuenta=None):
+def leeCtaBanco(cnxDb, bUno=False, pCtaBanco=None, cCuenta=None, fInstitucion=None):
+    cWhe = " 1=1 "
+    params = ()
+
     if pCtaBanco:
-        cWhe = " pCtaBanco = %s "
-        params = (pCtaBanco,)
-    elif cCuenta:
-        cWhe = " cCuenta = %s "
-        params = (cCuenta,)
-    else:
-        raise AppError("No se indico ID ni Cuenta para leer Cuenta Bancaria")
+        cWhe += " AND pCtaBanco = %s "
+        params += (pCtaBanco,)
+    if cCuenta:
+        cWhe += " AND cCuenta = %s "
+        params += (cCuenta,)
+    if fInstitucion:
+        cWhe += " AND fInstitucion = %s "
+        params += (fInstitucion,)
 
     arr = db.sqlQuery(
         "SELECT pCtaBanco, fInstitucion, fBanco, cNombre, cCuenta, tCreacion from tCtaBanco WHERE "
@@ -138,6 +142,10 @@ def leeCtaBanco(cnxDb, pCtaBanco=None, cCuenta=None):
     )
     if not arr:
         return None
+    if bUno == False:
+        return arr
+    if len(arr) > 1:
+        raise AppError("Se esperaba un solo registro al leer cuenta contable")
     return arr[0]
 
 
@@ -246,23 +254,45 @@ def leeMovim(
     )
 
 
+def getSaldoAnterior(cnxDb, fCtaBanco, dFecCorte):
+    arr = db.sqlQuery(
+        """SELECT dMovim, nSaldo 
+            FROM   tMovim
+            WHERE  fCtaBanco = %s
+            AND    dMovim < %s
+            ORDER BY dMovim DESC
+            LIMIT 1
+            """,
+        cnxDb=cnxDb,
+        params=(fCtaBanco, dFecCorte),
+    )
+    if arr:
+        return arr[0]["nSaldo"]
+    return 0
+
+
 def saldoCtaBanco(cnxDb, fInstitucion, dPeriodo=None, fCtaBanco=None):
-    params = (fInstitucion,)
+    if not dPeriodo:
+        raise AppError("Falta parámetro periodo")
+
+    cWheOn = " AND m.dMovim >= %s AND m.dMovim <= %s "
+    params = (dPeriodo.inicio(), dPeriodo.termino())
+
     cWhe = " c.fInstitucion = %s "
+    params += (fInstitucion,)
 
     if fCtaBanco:
         cWhe += " AND c.fCtaBanco = %s "
         params += (fCtaBanco,)
-    if dPeriodo:
-        cWhe += " AND m.dMovim >= %s AND m.dMovim <= %s "
-        params += (dPeriodo.inicio(), dPeriodo.termino())
 
     arr = db.sqlQuery(
         """SELECT c.pCtaBanco, c.fInstitucion, c.fBanco, c.cNombre, c.cCuenta
-                , m.pMovim, m.dMovim, m.nSaldo
+                , m.pMovim, m.fCtaContab, m.dMovim, m.nSaldo
             FROM  tCtaBanco c
-                  INNER JOIN tMovim m ON m.fCtaBanco = c.pCtaBanco 
-            WHERE """
+                  LEFT OUTER JOIN tMovim m ON m.fCtaBanco = c.pCtaBanco 
+        """
+        + cWheOn
+        + " WHERE "
         + cWhe
         + "ORDER BY c.pCtaBanco, m.dMovim DESC, m.pMovim DESC",
         cnxDb=cnxDb,
@@ -281,24 +311,50 @@ def saldoCtaBanco(cnxDb, fInstitucion, dPeriodo=None, fCtaBanco=None):
         # Asigna el primer registro que es el último saldo porque está
         # ordenado descendente
         reg0 = reg1
-        periodoYear = reg1["dMovim"].year
-        periodoMonth = reg1["dMovim"].month
-        arrSaldo.append(reg0)
         i += 1
-        while (
-            i < len(arr)
-            and reg0["pCtaBanco"] == reg1["pCtaBanco"]
-            and periodoYear == reg1["dMovim"].year
-            and periodoMonth == reg1["dMovim"].month
-        ):
+        nCount = 0
+        nNoAsig = 0
+        while i < len(arr) and reg0["pCtaBanco"] == reg1["pCtaBanco"]:
             reg1 = arr[i]
             i += 1
+            nCount += 1
+            if reg1["fCtaContab"] == None:
+                nNoAsig += 1
 
+        if reg0["nSaldo"] == None:
+            # Quiere decir que no hay regitros para la cuenta en el periodo.
+            # Se obtiene el saldo del periodo anterior mas próximo
+            reg0["nSaldo"] = getSaldoAnterior(
+                cnxDb, reg0["pCtaBanco"], dPeriodo.inicio()
+            )
+
+        reg0["nCantidadMovim"] = nCount
+        reg0["nMovimNoAsignados"] = nNoAsig
+        arrSaldo.append(reg0)
+
+    # Condición de Borde, el último registro es uno solo de otra cuenta
+    if reg0["pCtaBanco"] != reg1["pCtaBanco"]:
+        if reg1["nSaldo"]:
+            reg1["nCantidadMovim"] = 1
+            if reg1["fCtaContab"] == None:
+                reg1["nMovimNoAsignados"] = 0
+            else:
+                reg1["nMovimNoAsignados"] = 1
+        else:
+            reg1["nCantidadMovim"] = 0
+            reg1["nMovimNoAsignados"] = 0
+            reg1["nSaldo"] = getSaldoAnterior(
+                cnxDb, reg1["pCtaBanco"], dPeriodo.inicio()
+            )
+        arrSaldo.append(reg1)
+
+    # Elimina algunos campos que solo se utilizaron para manejar los cortes de control
+    cPeriodo = dPeriodo.strftime("%Y-%m")
     for reg in arrSaldo:
-        dp = periodo(reg["dMovim"].year, reg["dMovim"].month, 1)
         del reg["pMovim"]
         del reg["dMovim"]
-        reg["dPeriodo"] = dp.strftime("%Y-%m")
+        reg["dPeriodo"] = cPeriodo
+
     return arrSaldo
 
 
@@ -328,6 +384,35 @@ def totalCtaContab(cnxDb, fInstitucion, pCtaContab=None, dPeriodo=None):
     if not arr:
         return None
     return arr
+
+
+def updCtaBanco(cnxDb, pCtaBanco, fInstitucion, fBanco, cCuenta, cNombre):
+    if pCtaBanco == None or pCtaBanco <= 0:
+        arr = leeCtaBanco(
+            cnxDb=cnxDb, fInstitucion=fInstitucion, fBanco=fBanco, cCuenta=cCuenta
+        )
+        if arr:
+            raise AppError("Ya existe esta cuenta bancaria: " + cCuenta)
+        # Si no existe se crea
+        (n, nId) = db.sqlExec(
+            "INSERT INTO tCtaBanco( fInstitucion, fBanco, cCuenta, cNombre ) VALUES ( %s, %s, %s, %s )",
+            cnxDb=cnxDb,
+            params=(fInstitucion, fBanco, cCuenta, cNombre),
+        )
+        return nId
+
+    (n, nId) = db.sqlExec(
+        "UPDATE tCtaBanco set fBanco = %s, cCuenta = %s, cNombre = %s WHERE pCtaBanco = %s",
+        cnxDb=cnxDb,
+        params=(fBanco, cCuenta, cNombre, pCtaBanco),
+    )
+    arr = leeCtaBanco(
+        cnxDb=cnxDb, fInstitucion=fInstitucion, fBanco=fBanco, cCuenta=cCuenta
+    )
+    if len(arr) > 1:
+        raise AppError("Ya existe esta cuenta bancaria: " + cCuenta)
+
+    return n
 
 
 def updCtaContab(cnxDb, pCtaContab, fInstitucion, cCodigo, cNombre):
