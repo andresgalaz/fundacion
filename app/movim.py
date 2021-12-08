@@ -21,7 +21,7 @@ def asigna(event):
     cBody = getParam(event, "body", obligatorio=True)
     # Dentro de body viene un JSON que se convirte en parámetros
     arrMovContab = json.loads(cBody)
-    print(arrMovContab)
+    # print(arrMovContab)
 
     cnxDb = db.conecta()
     nCount = 0
