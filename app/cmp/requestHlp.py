@@ -61,6 +61,9 @@ def multipart(event):
 
 
 def getParam(event, cParamName, obligatorio=False, tipo=None):
+    if cParamName == "body" and "body" in event:
+        return event["body"]
+
     if "queryStringParameters" in event:
         params = event["queryStringParameters"]
     else:

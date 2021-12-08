@@ -35,6 +35,15 @@ def delInstitucion(cnxDb, pInstitucion):
     return n
 
 
+def delInstitucionUsuario(cnxDb, pInstitucion, pUsuario):
+    (n, nId) = db.sqlExec(
+        "DELETE FROM tInstitucionUsuario WHERE pInstitucion=%s AND pUsuario=%s",
+        cnxDb=cnxDb,
+        params=(pInstitucion, pUsuario),
+    )
+    return n
+
+
 def insArchivo(
     cnxDb, fInstitucion, cNombre, cNombreS3, cUsuario, dInicio=None, dTermino=None
 ):
@@ -240,7 +249,7 @@ def leeMovim(
     if bAsignadas != None:
         if bAsignadas:
             cWhe += " AND fCtaContab IS NOT NULL"
-        elif bAsignadas:
+        else:
             cWhe += " AND fCtaContab IS NULL"
 
     return db.sqlQuery(
@@ -252,6 +261,69 @@ def leeMovim(
         cnxDb=cnxDb,
         params=params,
     )
+
+
+def leePeriodos(cnxDb, fInstitucion):
+    return db.sqlQuery(
+        """SELECT SUBSTR( m.dMovim,1,7) dPeriodo, m.nSaldo, t.nCantidadMovim 
+           FROM   tMovim m 
+                  INNER JOIN ( SELECT max(pMovim) pMovimLast,  COUNT(*) nCantidadMovim 
+                               FROM   tMovim 
+                               WHERE  fInstitucion = %s
+                               GROUP BY SUBSTR( dMovim,1,7)
+                              ) as t ON t.pMovimLast = m.pMovim        
+           WHERE  m.fInstitucion = %s
+           ORDER BY 1 DESC""",
+        cnxDb=cnxDb,
+        params=(fInstitucion, fInstitucion),
+    )
+
+
+def leeUsuario(
+    cnxDb,
+    bUno=False,
+    pUsuario=None,
+    cUsuario=None,
+    cNombre=None,
+    cEmail=None,
+    bEnable=None,
+    cEstado=None,
+):
+    cWhe = " 1=1 "
+    params = ()
+    if pUsuario:
+        cWhe += " AND pUsuario = %s "
+        params += (pUsuario,)
+    if cUsuario:
+        cWhe += " AND cUsuario = %s "
+        params += (cUsuario,)
+    if cNombre:
+        cWhe += " AND cNombre = %s "
+        params += (cNombre,)
+    if cEmail:
+        cWhe += " AND cEmail = %s "
+        params += (cEmail,)
+    if bEnable != None:
+        cWhe += " AND bEnable = %s "
+        params += (bEnable,)
+    if cEstado:
+        cWhe += " AND cEmail = %s "
+        params += (cEmail,)
+
+    arr = db.sqlQuery(
+        "SELECT  pUsuario, cUsuario, cNombre, cEmail, bEnable, cEstado, tCreacion from tUsuario WHERE "
+        + cWhe,
+        cnxDb=cnxDb,
+        params=params,
+    )
+    if not arr:
+        return None
+    if bUno:
+        if len(arr) > 1:
+            raise AppError("Se esperaba leer un solo usuario")
+        return arr[0]
+
+    return arr
 
 
 def getSaldoAnterior(cnxDb, fCtaBanco, dFecCorte):
@@ -359,23 +431,27 @@ def saldoCtaBanco(cnxDb, fInstitucion, dPeriodo=None, fCtaBanco=None):
 
 
 def totalCtaContab(cnxDb, fInstitucion, pCtaContab=None, dPeriodo=None):
-    cWhe = " WHERE c.fInstitucion = %s "
-    params = (fInstitucion,)
-
-    if pCtaContab:
-        cWhe += " AND pCtaContab = %s "
-        params += (pCtaContab,)
+    params = ()
+    cWheOn = ""
     if dPeriodo:
-        cWhe += " AND m.dMovim >= %s AND m.dMovim <= %s "
+        cWheOn += " AND m.dMovim >= %s AND m.dMovim <= %s "
         params += (dPeriodo.inicio(), dPeriodo.termino())
+
+    cWhe = " WHERE c.fInstitucion = %s "
+    params += (fInstitucion,)
+    if pCtaContab:
+        cWhe += " AND c.pCtaContab = %s "
+        params += (pCtaContab,)
 
     arr = db.sqlQuery(
         """
         SELECT c.pCtaContab, c.fInstitucion, c.cCodigo, c.cNombre
              , SUBSTR( m.dMovim,1,7) dPeriodo, SUM(m.nAbono) nAbono, SUM(m.nCargo) nCargo
+             , count(*) nCantidadMovim
         FROM tCtaContab c
-            INNER JOIN tMovim m ON m.fCtaContab = c.pCtaContab 
+            LEFT OUTER JOIN tMovim m ON m.fCtaContab = c.pCtaContab 
         """
+        + cWheOn
         + cWhe
         + " GROUP BY c.pCtaContab, c.fInstitucion, c.cCodigo, c.cNombre, SUBSTR( m.dMovim,1,7) ",
         cnxDb=cnxDb,
@@ -383,6 +459,13 @@ def totalCtaContab(cnxDb, fInstitucion, pCtaContab=None, dPeriodo=None):
     )
     if not arr:
         return None
+    for reg in arr:
+        if reg["nAbono"] == None:
+            reg["nCantidadMovim"] = 0
+            reg["nAbono"] = 0
+            reg["nCargo"] = 0
+            if dPeriodo:
+                reg["dPeriodo"] = dPeriodo.strftime("%Y-%m")
     return arr
 
 
@@ -463,3 +546,50 @@ def updInstitucion(cnxDb, fInstitucion, cNombre):
         raise AppError("Ya existe una institucion con el nombre: " + cNombre)
 
     return n
+
+
+def updInstitucionUsuario(cnxDb, pInstitucion, pUsuario):
+    if db.sqlQuery(
+        "SELECT 1 FROM tInstitucionUsuario WHERE pInstitucion=%s AND pUsuario=%s",
+        cnxDb=cnxDb,
+        params=(pInstitucion, pUsuario),
+    ):
+        # Ya existe la relación
+        return
+
+    db.sqlExec(
+        "INSERT INTO tInstitucionUsuario( pInstitucion, pUsuario ) VALUES ( %s, %s )",
+        cnxDb=cnxDb,
+        params=(pInstitucion, pUsuario),
+    )
+
+
+def updMovimAsigna(cnxDb, pMovim, fCtaContab, fInstitucion):
+    (n, nId) = db.sqlExec(
+        "UPDATE tMovim set fCtaContab = %s WHERE pMovim = %s and fInstitucion=%s",
+        cnxDb=cnxDb,
+        params=(fCtaContab, pMovim, fInstitucion),
+    )
+    return n
+
+
+def updUsuario(
+    cnxDb, cNombre, cUsuario, cEmail, bEnable=True, cEstado="CONFIRMED", **_
+):
+    arr = leeUsuario(cnxDb=cnxDb, bUno=True, cUsuario=cUsuario)
+    if arr:
+        # SI existe se actuliza el resto de los campos
+        pUsuario = arr["pUsuario"]
+        (n, nId) = db.sqlExec(
+            "UPDATE tUsuario set cNombre=%s, cEmail=%s, bEnable=%s, cEstado=%s WHERE pUsuario = %s",
+            cnxDb=cnxDb,
+            params=(cNombre, cEmail, bEnable, cEstado, pUsuario),
+        )
+        return n
+
+    (n, nId) = db.sqlExec(
+        "INSERT INTO tUsuario( cNombre, cUsuario, cEmail, bEnable, cEstado ) VALUES ( %s, %s, %s, %s, %s )",
+        cnxDb=cnxDb,
+        params=(cNombre, cUsuario, cEmail, bEnable, cEstado),
+    )
+    return nId

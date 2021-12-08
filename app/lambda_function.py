@@ -2,7 +2,7 @@
 __author__ = "Andrés Galaz"
 __license__ = "LGPL"
 __email__ = "andres.galaz@gmail.com"
-__version__ = "v1.0"
+__version__ = "v1.1"
 
 import json
 import logging
@@ -17,6 +17,7 @@ import ctaContab
 import institucion
 import movim
 import resumen
+import usuario
 
 
 PATH_BANCO = "/banco"
@@ -30,9 +31,14 @@ PATH_INSTITUCION = "/institucion"
 PATH_INSTITUCION_UPD = "/institucion_upd"
 PATH_INSTITUCION_DEL = "/institucion_del"
 PATH_MOVIM = "/movim"
+PATH_MOVIM_ASIGNA = "/movim_asigna"
+PATH_PERIODOS = "/periodos"
 PATH_SALDO_CTABANCO = "/saldo_cta_banco"
 PATH_TOTAL_CTACONTAB = "/total_cta_contab"
 PATH_UPLOAD = "/upload"
+PATH_USUARIO_ASIGNA = "/usuario_asigna"
+PATH_USUARIO_DESASIGNA = "/usuario_desasigna"
+PATH_USUARIO_LOAD = "/usuario_load"
 
 
 def lambda_handler(event, context):
@@ -70,13 +76,22 @@ def lambda_handler(event, context):
 
         elif cRuta == PATH_MOVIM:
             resp = {"records": movim.lista(event)}
+        elif cRuta == PATH_MOVIM_ASIGNA:
+            resp = {"registros_procesados": movim.asigna(event)}
+        elif cRuta == PATH_PERIODOS:
+            resp = {"records": movim.periodos(event)}
         elif cRuta == PATH_SALDO_CTABANCO:
             resp = {"records": ctaBanco.saldo(event)}
         elif cRuta == PATH_TOTAL_CTACONTAB:
             resp = {"records": ctaContab.total(event)}
         elif cRuta == PATH_UPLOAD:
-            movimList = resumen.upload(event)
-            resp = {"records": movimList}
+            resp = {"records": resumen.upload(event)}
+        elif cRuta == PATH_USUARIO_ASIGNA:
+            resp = {"registros_procesados": usuario.asigna(event)}
+        elif cRuta == PATH_USUARIO_DESASIGNA:
+            resp = {"registros_procesados": usuario.desasigna(event)}
+        elif cRuta == PATH_USUARIO_LOAD:
+            resp = {"registros_procesados": usuario.load(event)}
         else:
             raise AppError("No existe la ruta: " + cRuta)
 

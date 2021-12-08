@@ -6,16 +6,18 @@ __version__ = "v1.0"
 
 import pymysql
 
+import config
 from cmp.appError import AppError
 
 
 def conecta():
+    print("config", config)
     try:
         cnxDb = pymysql.connect(
-            host="dev-erp.cluster-cgarkdoeof64.us-east-1.rds.amazonaws.com",
-            user="admin",
-            password="xtroMile",
-            database="db_fundacion",
+            host=config.DB["host"],
+            user=config.DB["user"],
+            password=config.DB["password"],
+            database=config.DB["database"],
         )
         if not cnxDb:
             raise AppError("Error al conectar a la base de datos")

@@ -7,7 +7,7 @@ CREATE TABLE tCtaBanco (
   cCuenta       varchar (20)    NOT NULL,
   tCreacion     timestamp       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (pCtaBanco),
-  UNIQUE KEY iuCtaBanco_cuenta (cCuenta),
+  UNIQUE KEY iuCtaBanco_cuenta (fBanco, cCuenta),
   CONSTRAINT fkCtaBanco_institucion FOREIGN KEY (fInstitucion)  REFERENCES tInstitucion (pInstitucion),
   CONSTRAINT fkCtaBanco_banco       FOREIGN KEY (fBanco)        REFERENCES tBanco       (pBanco)
 );

@@ -1,0 +1,38 @@
+{
+    "version": "2.0",
+    "routeKey": "POST /usuario_load",
+    "rawPath": "/usuario_load",
+    "rawQueryString": "",
+    "headers": {
+        "accept": "*/*",
+        "accept-encoding": "gzip, deflate, br",
+        "cache-control": "no-cache",
+        "content-length": "0",
+        "host": "0kz13emnrh.execute-api.us-east-1.amazonaws.com",
+        "postman-token": "4544c36f-ddda-4b32-9566-725a3a0f2e5e",
+        "user-agent": "PostmanRuntime/7.28.4",
+        "x-amzn-trace-id": "Root=1-61b03133-71ee0fb5455245696cfbd8f3",
+        "x-forwarded-for": "207.248.199.134",
+        "x-forwarded-port": "443",
+        "x-forwarded-proto": "https"
+    },
+    "requestContext": {
+        "accountId": "588550057682",
+        "apiId": "0kz13emnrh",
+        "domainName": "0kz13emnrh.execute-api.us-east-1.amazonaws.com",
+        "domainPrefix": "0kz13emnrh",
+        "http": {
+            "method": "POST",
+            "path": "/usuario_load",
+            "protocol": "HTTP/1.1",
+            "sourceIp": "207.248.199.134",
+            "userAgent": "PostmanRuntime/7.28.4"
+        },
+        "requestId": "KAygIjWjoAMEMgA=",
+        "routeKey": "POST /usuario_load",
+        "stage": "$default",
+        "time": "08/Dec/2021:04:14:43 +0000",
+        "timeEpoch": 1638936883800
+    },
+    "isBase64Encoded": false
+}

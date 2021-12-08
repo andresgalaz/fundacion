@@ -5,10 +5,11 @@ __email__ = "andres.galaz@gmail.com"
 __version__ = "v1.0"
 
 # Bibliorecas propias
-import cmp.dataMng as dm
 import cmp.db as db
 from cmp.requestHlp import getParam
 from cmp.glUtil import periodo
+
+import dataMng as dm
 
 
 def delete(event):

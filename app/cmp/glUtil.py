@@ -306,3 +306,36 @@ def parseCsv(cBucketName, cFileName):
             R.append(c.strip())
         M.append(R)
     return numpy.array(M).transpose().tolist()
+
+
+def getUsersCognito(idUserPoolCognito):
+    cognito = boto3.client("cognito-idp")
+
+    users = []
+    next_page = None
+    kwargs = {"UserPoolId": idUserPoolCognito}
+
+    users_remain = True
+    while users_remain:
+        if next_page:
+            kwargs["PaginationToken"] = next_page
+        response = cognito.list_users(**kwargs)
+        users.extend(response["Users"])
+        next_page = response.get("PaginationToken", None)
+        users_remain = next_page is not None
+
+    resp = []
+    for reg in users:
+        att = reg["Attributes"]
+        nameVal = [x for x in att if x["Name"] == "name"][0]["Value"]
+        emailVal = [x for x in att if x["Name"] == "email"][0]["Value"]
+        resp.append(
+            {
+                "cUsuario": reg["Username"],
+                "cNombre": nameVal,
+                "cEmail": emailVal,
+                "bEnable": reg["Enabled"],
+                "cEstado": reg["UserStatus"],
+            }
+        )
+    return resp

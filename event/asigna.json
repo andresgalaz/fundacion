@@ -1,0 +1,44 @@
+{
+    "version": "2.0",
+    "routeKey": "POST /movim_asigna",
+    "rawPath": "/movim_asigna",
+    "rawQueryString": "institucion=1&usuario=agalaz",
+    "headers": {
+        "accept": "*/*",
+        "accept-encoding": "gzip, deflate, br",
+        "cache-control": "no-cache",
+        "content-length": "368",
+        "content-type": "text/plain",
+        "host": "0kz13emnrh.execute-api.us-east-1.amazonaws.com",
+        "postman-token": "756d1015-eaf0-4379-ae7a-22c57630f0b6",
+        "user-agent": "PostmanRuntime/7.28.4",
+        "x-amzn-trace-id": "Root=1-61ae833d-7b03e78e3d0376814febb027",
+        "x-forwarded-for": "207.248.199.134",
+        "x-forwarded-port": "443",
+        "x-forwarded-proto": "https"
+    },
+    "queryStringParameters": {
+        "institucion": "1",
+        "usuario": "agalaz"
+    },
+    "requestContext": {
+        "accountId": "588550057682",
+        "apiId": "0kz13emnrh",
+        "domainName": "0kz13emnrh.execute-api.us-east-1.amazonaws.com",
+        "domainPrefix": "0kz13emnrh",
+        "http": {
+            "method": "POST",
+            "path": "/movim_asigna",
+            "protocol": "HTTP/1.1",
+            "sourceIp": "207.248.199.134",
+            "userAgent": "PostmanRuntime/7.28.4"
+        },
+        "requestId": "J8lxthoaoAMEPxA=",
+        "routeKey": "POST /movim_asigna",
+        "stage": "$default",
+        "time": "06/Dec/2021:21:40:13 +0000",
+        "timeEpoch": 1638826813933
+    },
+    "body": "[{\"pMovim\":2,\"fCtaContab\":1},{\"pMovim\":3,\"fCtaContab\":1},{\"pMovim\":4,\"fCtaContab\":1},{\"pMovim\":5,\"fCtaContab\":1},{\"pMovim\":6,\"fCtaContab\":1},{\"pMovim\":7,\"fCtaContab\":1},{\"pMovim\":8,\"fCtaContab\":1},{\"pMovim\":9,\"fCtaContab\":1},{\"pMovim\":12,\"fCtaContab\":1},{\"pMovim\":22,\"fCtaContab\":1},{\"pMovim\":32,\"fCtaContab\":1}]",
+    "isBase64Encoded": false
+}

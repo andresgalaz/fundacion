@@ -8,17 +8,18 @@ import re
 from unicodedata import normalize
 
 # Bibliorecas propias
-import cmp.dataMng as dm
+import config
+
+from cmp.appError import AppError
 import cmp.db as db
 import cmp.glUtil as u
 from cmp.requestHlp import multipart, getParam
 
-BUCKET_S3 = "fundaciones"
+
+import dataMng as dm
 
 # La función upload es la principal, que recibe el evento
 # desde la WEB
-
-
 def buscaCelda(data, key, addKey=""):
     for i, r in enumerate(data):
         for j, c in enumerate(r):
@@ -90,10 +91,10 @@ def buscaFila(data, keys):
 
 
 def grabaResumen(cnxDb, cUsuario, nInstitucion, nBanco, nArchivo, cArchivoS3):
-    if u.isExcelS3(BUCKET_S3, cArchivoS3):
-        m = u.parseExcel(BUCKET_S3, cArchivoS3)
+    if u.isExcelS3(config.BUCKET_S3, cArchivoS3):
+        m = u.parseExcel(config.BUCKET_S3, cArchivoS3)
     else:
-        m = u.parseCsv(BUCKET_S3, cArchivoS3)
+        m = u.parseCsv(config.BUCKET_S3, cArchivoS3)
     # print(m)
     cFundacion = None
     cCuenta = None
@@ -133,7 +134,8 @@ def grabaResumen(cnxDb, cUsuario, nInstitucion, nBanco, nArchivo, cArchivoS3):
     if ctaBanco:
         fCtaBanco = ctaBanco["pCtaBanco"]
     else:
-        fCtaBanco = dm.insCtaBanco(cnxDb, nInstitucion, nBanco, None, cCuenta)
+        raise AppError("No existe cuentabancaria número: " + cCuenta)
+        # fCtaBanco = dm.insCtaBanco(cnxDb, nInstitucion, nBanco, None, cCuenta)
 
     for i in range(resp["fila"] + 1, len(m)):
         # print(m[i])
@@ -177,7 +179,7 @@ def upload(event):
         "upload", nInstitucion, u.fechaIso(), cUsuario, fileName
     )
     # Graba archivo en S3
-    u.strToS3(BUCKET_S3, cArchivoS3, contenido.encode("iso-8859-1"))
+    u.strToS3(config.BUCKET_S3, cArchivoS3, contenido.encode("iso-8859-1"))
 
     cnxDb = db.conecta()
     # Crea un registro asociado en la BD

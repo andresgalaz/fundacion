@@ -1,0 +1,37 @@
+[
+    {
+        "cNombre": "agalaz",
+        "cUsuario": "Andr\u00e9s Galaz",
+        "cEmail": "andres.galaz@gmail.com",
+        "bEnable": true,
+        "cEstado": "CONFIRMED"
+    },
+    {
+        "cNombre": "cjeria",
+        "cUsuario": "Cristi\u00e1n Jeria",
+        "cEmail": "cjeria@trzl.cl",
+        "bEnable": true,
+        "cEstado": "CONFIRMED"
+    },
+    {
+        "cNombre": "dbarrera",
+        "cUsuario": "Danilo Barrera",
+        "cEmail": "d.barrera@trzl.cl",
+        "bEnable": true,
+        "cEstado": "CONFIRMED"
+    },
+    {
+        "cNombre": "jsilva",
+        "cUsuario": "Jorge silva rivas",
+        "cEmail": "rrhh.jsilva@gmail.com",
+        "bEnable": true,
+        "cEstado": "CONFIRMED"
+    },
+    {
+        "cNombre": "mvico",
+        "cUsuario": "Maximiliano Vico Yusso",
+        "cEmail": "maximiliano.vicoyusso@gmail.com",
+        "bEnable": true,
+        "cEstado": "CONFIRMED"
+    }
+]
