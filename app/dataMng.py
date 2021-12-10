@@ -276,8 +276,15 @@ def leeCtaBanco(
         params += (fBanco,)
 
     arr = db.sqlQuery(
-        "SELECT pCtaBanco, fInstitucion, fBanco, cNombre, cCuenta, tCreacion from tCtaBanco WHERE "
-        + cWhe,
+        """SELECT cta.pCtaBanco, cta.fInstitucion
+                , cta.fBanco, bco.cNombre cBanco
+                , cta.cNombre, cta.cCuenta, cta.tCreacion 
+                
+           FROM   tCtaBanco cta 
+           INNER JOIN tBanco bco ON bco.pBanco = cta.fBanco
+           WHERE {} """.format(
+            cWhe
+        ),
         cnxDb=cnxDb,
         params=params,
     )
@@ -352,6 +359,7 @@ def leeMovim(
     cnxDb,
     fArchivo=None,
     fInstitucion=None,
+    fCtaBanco=None,
     fCtaContab=None,
     dPeriodo=None,
     dMovinIni=None,
@@ -366,6 +374,9 @@ def leeMovim(
     if fInstitucion:
         cWhe += " AND fInstitucion = %s "
         params += (fInstitucion,)
+    if fCtaBanco:
+        cWhe += " AND fCtaBanco = %s "
+        params += (fCtaBanco,)
     if fCtaContab:
         cWhe += " AND fCtaContab = %s "
         params += (fCtaContab,)
@@ -501,12 +512,12 @@ def saldoCtaBanco(cnxDb, fInstitucion, dPeriodo=None, fCtaBanco=None):
         """SELECT c.pCtaBanco, c.fInstitucion, c.fBanco, c.cNombre, c.cCuenta
                 , m.pMovim, m.fCtaContab, m.dMovim, m.nSaldo
             FROM  tCtaBanco c
-                  LEFT OUTER JOIN tMovim m ON m.fCtaBanco = c.pCtaBanco 
-        """
-        + cWheOn
-        + " WHERE "
-        + cWhe
-        + "ORDER BY c.pCtaBanco, m.dMovim DESC, m.pMovim DESC",
+                  LEFT OUTER JOIN tMovim m ON m.fCtaBanco = c.pCtaBanco {}
+            WHERE {}
+            ORDER BY c.pCtaBanco, m.dMovim DESC, m.pMovim DESC
+        """.format(
+            cWheOn, cWhe
+        ),
         cnxDb=cnxDb,
         params=params,
     )

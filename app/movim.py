@@ -49,6 +49,7 @@ def asigna(event):
 
 def lista(event):
     nInstitucion = getParam(event, "institucion", obligatorio=True, tipo=int)
+    nCtaBanco = getParam(event, "cuenta_banco", tipo=int)
     nCtaContab = getParam(event, "cuenta_contab", tipo=int)
     # Filtra movimientos con la cuenta contable asignada o no
     bAsignadas = getParam(event, "asignadas", tipo=bool)
@@ -59,27 +60,10 @@ def lista(event):
 
     cnxDb = db.conecta()
 
-    # se puede propocionar la id o el nombre de la cuenta contable
-    # nCtaContab = None
-    # if cCtaContab:
-    #     arr = dm.leeCtaContab(
-    #         cnxDb,
-    #         bUno=True,
-    #         fInstitucion=nInstitucion,
-    #         cCodigo=cCtaContab,
-    #     )
-    #     if not arr:
-    #         cnxDb.close()
-    #         raise AppError(
-    #             "No existe cuenta contable '{}' asociada a la institución".format(
-    #                 cCtaContab
-    #             )
-    #         )
-    #     nCtaContab = arr["pCtaContab"]
-
     lisMovim = dm.leeMovim(
         cnxDb,
         fInstitucion=nInstitucion,
+        fCtaBanco=nCtaBanco,
         fCtaContab=nCtaContab,
         dPeriodo=dPeriodo,
         dMovinIni=fechaIni,
