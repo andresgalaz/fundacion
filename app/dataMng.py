@@ -6,7 +6,65 @@ __version__ = "v1.0"
 
 from cmp.appError import AppError
 import cmp.db as db
-from cmp.glUtil import periodo
+import cmp.glUtil as u
+
+import config
+
+
+def delArchivo(cnxDb, pArchivo):
+    regArch = leeArchivo(cnxDb, bUno=True, pArchivo=pArchivo)
+    if not regArch:
+        raise AppError("No existe archivo con ID {}".format(pArchivo))
+
+    # Busca lo archivos que coincidan con Institución y Cuenta Bancaria para el pArchivo,
+    # pero con fecha posterior
+    if db.sqlQuery(
+        """
+        SELECT '1'
+        FROM   tArchivo arc
+        INNER JOIN ( SELECT fInstitucion, fCtaBanco, dInicio, dTermino
+                    FROM   tArchivo
+                    WHERE  pArchivo = %s ) sub ON sub.fInstitucion = arc.fInstitucion
+                                            AND sub.fCtaBanco    = arc.fCtaBanco
+        WHERE   arc.dInicio > sub.dInicio
+        """,
+        cnxDb=cnxDb,
+        params=(pArchivo,),
+    ):
+        # Si hay archivos posteriores, primero se deben borrar los archivos posteriores
+        raise AppError("Hay archivos posteriores, no se puede borrar")
+
+    db.sqlExec(
+        "DELETE FROM tMovim WHERE fArchivo=%s",
+        cnxDb=cnxDb,
+        params=(pArchivo,),
+    )
+
+    (n, nId) = db.sqlExec(
+        "DELETE FROM tArchivo WHERE pArchivo=%s",
+        cnxDb=cnxDb,
+        params=(pArchivo,),
+    )
+    u.deleteFromS3(config.BUCKET_S3, regArch["cNombreS3"])
+
+    # Cantidad registros eliminados
+    return n
+
+
+def delCtaBanco(cnxDb, pCtaBanco):
+    db.sqlExec(
+        "DELETE FROM tMovim WHERE fCtaBanco=%s",
+        cnxDb=cnxDb,
+        params=(pCtaBanco,),
+    )
+
+    (n, nId) = db.sqlExec(
+        "DELETE FROM tCtaBanco WHERE pCtaBanco=%s",
+        cnxDb=cnxDb,
+        params=(pCtaBanco,),
+    )
+    # Cantidad registros eliminados
+    return n
 
 
 def delCtaContab(cnxDb, pCtaContab):
@@ -45,12 +103,33 @@ def delInstitucionUsuario(cnxDb, pInstitucion, pUsuario):
 
 
 def insArchivo(
-    cnxDb, fInstitucion, cNombre, cNombreS3, cUsuario, dInicio=None, dTermino=None
+    cnxDb,
+    fInstitucion,
+    fCtaBanco,
+    cNombre,
+    cNombreS3,
+    cUsuario,
+    dInicio=None,
+    dTermino=None,
+    nSaldoInicio=None,
+    nSaldoTermino=None,
 ):
     (n, nId) = db.sqlExec(
-        "INSERT INTO tArchivo( fInstitucion, cNombre, cNombreS3,  cUsuario,  dInicio,  dTermino ) VALUES ( %s, %s, %s, %s, %s, %s )",
+        """INSERT INTO tArchivo ( fInstitucion, fCtaBanco, cNombre, cNombreS3,  cUsuario
+                               ,  dInicio,  dTermino, nSaldoInicio, nSaldoTermino )
+           VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s )""",
         cnxDb=cnxDb,
-        params=(fInstitucion, cNombre, cNombreS3, cUsuario, dInicio, dTermino),
+        params=(
+            fInstitucion,
+            fCtaBanco,
+            cNombre,
+            cNombreS3,
+            cUsuario,
+            dInicio,
+            dTermino,
+            nSaldoInicio,
+            nSaldoTermino,
+        ),
     )
     return nId
 
@@ -102,6 +181,54 @@ def insMovim(
     )
 
 
+def leeArchivo(
+    cnxDb,
+    bUno=False,
+    pArchivo=None,
+    fInstitucion=None,
+    fCtaBanco=None,
+    cNombre=None,
+    dMovim=None,
+):
+    cWhe = " 1=1 "
+    params = ()
+
+    if pArchivo:
+        cWhe += " AND pArchivo = %s "
+        params += (pArchivo,)
+    if fInstitucion:
+        cWhe += " AND fInstitucion = %s "
+        params += (fInstitucion,)
+    if fCtaBanco:
+        cWhe += " AND fCtaBanco = %s "
+        params += (fCtaBanco,)
+    if cNombre:
+        cWhe += " AND upper(cNombre) like %s "
+        params += ("%" + cNombre + "%",)
+    if dMovim:
+        # dMovim debe estar entre la fecha de Inicio y termino del archivo
+        cWhe += " AND %s BETWEEN dInicio AND dTermino "
+        params += (dMovim,)
+
+    arr = db.sqlQuery(
+        """SELECT pArchivo , fInstitucion, fCtaBanco, cNombre     , cNombreS3
+                , cUsuario , dInicio     , dTermino , nSaldoInicio, nSaldoTermino
+                , tCreacion   
+           FROM tArchivo
+           WHERE """
+        + cWhe,
+        cnxDb=cnxDb,
+        params=params,
+    )
+    if not arr:
+        return None
+    if bUno == False:
+        return arr
+    if len(arr) > 1:
+        raise AppError("Se esperaba un solo registro al leer archivo")
+    return arr[0]
+
+
 def leeBanco(cnxDb, bUno=False, pBanco=None, cNombre=None):
     if pBanco:
         cWhe = " pBanco = %s "
@@ -129,7 +256,9 @@ def leeBanco(cnxDb, bUno=False, pBanco=None, cNombre=None):
     return arr[0]
 
 
-def leeCtaBanco(cnxDb, bUno=False, pCtaBanco=None, cCuenta=None, fInstitucion=None):
+def leeCtaBanco(
+    cnxDb, bUno=False, pCtaBanco=None, fBanco=None, cCuenta=None, fInstitucion=None
+):
     cWhe = " 1=1 "
     params = ()
 
@@ -142,6 +271,9 @@ def leeCtaBanco(cnxDb, bUno=False, pCtaBanco=None, cCuenta=None, fInstitucion=No
     if fInstitucion:
         cWhe += " AND fInstitucion = %s "
         params += (fInstitucion,)
+    if fBanco:
+        cWhe += " AND fBanco = %s "
+        params += (fBanco,)
 
     arr = db.sqlQuery(
         "SELECT pCtaBanco, fInstitucion, fBanco, cNombre, cCuenta, tCreacion from tCtaBanco WHERE "
@@ -177,7 +309,7 @@ def leeCtaContab(
         params += (cCodigo,)
 
     arr = db.sqlQuery(
-        "SELECT pCtaContab, fInstitucion, cCodigo, cNombre, tCreacion from tCtaContab WHERE "
+        "SELECT pCtaContab, fInstitucion, cCodigo, cNombre, bAbono, bCargo, tCreacion from tCtaContab WHERE "
         + cWhe,
         cnxDb=cnxDb,
         params=params,
@@ -326,21 +458,29 @@ def leeUsuario(
     return arr
 
 
-def getSaldoAnterior(cnxDb, fCtaBanco, dFecCorte):
+def getSaldoAnterior(cnxDb, fCtaBanco, dFecCorte=None):
+    cWhe = ""
+    params = (fCtaBanco,)
+    if dFecCorte:
+        cWhe = " AND dMovim < %s "
+        params += (dFecCorte,)
+
     arr = db.sqlQuery(
         """SELECT dMovim, nSaldo 
             FROM   tMovim
             WHERE  fCtaBanco = %s
-            AND    dMovim < %s
-            ORDER BY dMovim DESC
+            {}
+            ORDER BY dMovim DESC, pMovim DESC
             LIMIT 1
-            """,
+            """.format(
+            cWhe
+        ),
         cnxDb=cnxDb,
-        params=(fCtaBanco, dFecCorte),
+        params=params,
     )
     if arr:
-        return arr[0]["nSaldo"]
-    return 0
+        return (arr[0]["dMovim"], arr[0]["nSaldo"])
+    return (None, 0)
 
 
 def saldoCtaBanco(cnxDb, fInstitucion, dPeriodo=None, fCtaBanco=None):
@@ -396,7 +536,7 @@ def saldoCtaBanco(cnxDb, fInstitucion, dPeriodo=None, fCtaBanco=None):
         if reg0["nSaldo"] == None:
             # Quiere decir que no hay regitros para la cuenta en el periodo.
             # Se obtiene el saldo del periodo anterior mas próximo
-            reg0["nSaldo"] = getSaldoAnterior(
+            (dMovim, reg0["nSaldo"]) = getSaldoAnterior(
                 cnxDb, reg0["pCtaBanco"], dPeriodo.inicio()
             )
 
@@ -415,7 +555,7 @@ def saldoCtaBanco(cnxDb, fInstitucion, dPeriodo=None, fCtaBanco=None):
         else:
             reg1["nCantidadMovim"] = 0
             reg1["nMovimNoAsignados"] = 0
-            reg1["nSaldo"] = getSaldoAnterior(
+            (dMovim, reg1["nSaldo"]) = getSaldoAnterior(
                 cnxDb, reg1["pCtaBanco"], dPeriodo.inicio()
             )
         arrSaldo.append(reg1)
@@ -498,23 +638,23 @@ def updCtaBanco(cnxDb, pCtaBanco, fInstitucion, fBanco, cCuenta, cNombre):
     return n
 
 
-def updCtaContab(cnxDb, pCtaContab, fInstitucion, cCodigo, cNombre):
+def updCtaContab(cnxDb, pCtaContab, fInstitucion, cCodigo, cNombre, bAbono, bCargo):
     if pCtaContab == None or pCtaContab <= 0:
         arr = leeCtaContab(cnxDb=cnxDb, fInstitucion=fInstitucion, cCodigo=cCodigo)
         if arr:
             raise AppError("Ya existe una cuenta contable con el código: " + cCodigo)
         # Si no existe se crea
         (n, nId) = db.sqlExec(
-            "INSERT INTO tCtaContab( fInstitucion, cCodigo, cNombre ) VALUES ( %s, %s, %s )",
+            "INSERT INTO tCtaContab( fInstitucion, cCodigo, cNombre, bAbono, bCargo ) VALUES ( %s, %s, %s, %s, %s )",
             cnxDb=cnxDb,
-            params=(fInstitucion, cCodigo, cNombre),
+            params=(fInstitucion, cCodigo, cNombre, bAbono, bCargo),
         )
         return nId
 
     (n, nId) = db.sqlExec(
-        "UPDATE tCtaContab set cCodigo = %s, cNombre = %s WHERE pCtaContab = %s",
+        "UPDATE tCtaContab set cCodigo = %s, cNombre = %s, bAbono = %s, bCargo = %s WHERE pCtaContab = %s",
         cnxDb=cnxDb,
-        params=(cCodigo, cNombre, pCtaContab),
+        params=(cCodigo, cNombre, bAbono, bCargo, pCtaContab),
     )
     arr = leeCtaContab(cnxDb=cnxDb, fInstitucion=fInstitucion, cCodigo=cCodigo)
     if len(arr) > 1:

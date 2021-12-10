@@ -2,7 +2,7 @@
 __author__ = "Andrés Galaz"
 __license__ = "LGPL"
 __email__ = "andres.galaz@gmail.com"
-__version__ = "v1.1"
+__version__ = "v1.2"
 
 import json
 import logging
@@ -11,6 +11,7 @@ import traceback
 from cmp.appError import AppError
 import cmp.glUtil as u
 
+import archivo
 import banco
 import ctaBanco
 import ctaContab
@@ -20,6 +21,8 @@ import resumen
 import usuario
 
 
+PATH_ARCHIVO = "/archivo"
+PATH_ARCHIVO_DEL = "/archivo_del"
 PATH_BANCO = "/banco"
 PATH_CTA_BANCO = "/cta_banco"
 PATH_CTA_BANCO_UPD = "/cta_banco_upd"
@@ -41,6 +44,22 @@ PATH_USUARIO_DESASIGNA = "/usuario_desasigna"
 PATH_USUARIO_LOAD = "/usuario_load"
 
 
+def convertResp(x):
+    if type(x) == dict:
+        if not "success" in x:
+            x["success"] = True
+        return x
+
+    resp = dict(success=True)
+    if type(x) == str:
+        resp["message"] = x
+    elif type(x) == int:
+        resp["registros_procesados"] = x
+    else:
+        resp["records"] = x
+    return resp
+
+
 def lambda_handler(event, context):
     log = logging.getLogger("lambda_handler")
     log.debug("Fundaciones " + __version__)
@@ -50,61 +69,68 @@ def lambda_handler(event, context):
     try:
         cRuta = event["rawPath"]
 
-        if cRuta == PATH_BANCO:
-            resp = {"records": banco.lista(event)}
-
+        data = None
+        if cRuta == PATH_ARCHIVO:
+            data = archivo.lista(event)
+        elif cRuta == PATH_ARCHIVO_DEL:
+            data = archivo.delete(event)
+        elif cRuta == PATH_BANCO:
+            data = banco.lista(event)
         elif cRuta == PATH_CTA_BANCO:
-            resp = {"records": ctaBanco.lista(event)}
+            data = ctaBanco.lista(event)
         elif cRuta == PATH_CTA_BANCO_DEL:
-            resp = {"records": ctaBanco.delete(event)}
+            data = ctaBanco.delete(event)
         elif cRuta == PATH_CTA_BANCO_UPD:
-            resp = {"records": ctaBanco.update(event)}
+            data = ctaBanco.update(event)
 
         elif cRuta == PATH_CTA_CONTAB:
-            resp = {"records": ctaContab.lista(event)}
+            data = ctaContab.lista(event)
         elif cRuta == PATH_CTA_CONTAB_DEL:
-            resp = {"records": ctaContab.delete(event)}
+            data = ctaContab.delete(event)
         elif cRuta == PATH_CTA_CONTAB_UPD:
-            resp = {"records": ctaContab.update(event)}
+            data = ctaContab.update(event)
 
         elif cRuta == PATH_INSTITUCION:
-            resp = {"records": institucion.lista(event)}
+            data = institucion.lista(event)
         elif cRuta == PATH_INSTITUCION_DEL:
-            resp = {"message": institucion.delete(event)}
+            data = institucion.delete(event)
         elif cRuta == PATH_INSTITUCION_UPD:
-            resp = {"message": institucion.update(event)}
+            data = institucion.update(event)
 
         elif cRuta == PATH_MOVIM:
-            resp = {"records": movim.lista(event)}
+            data = movim.lista(event)
         elif cRuta == PATH_MOVIM_ASIGNA:
-            resp = {"registros_procesados": movim.asigna(event)}
+            data = movim.asigna(event)
+
         elif cRuta == PATH_PERIODOS:
-            resp = {"records": movim.periodos(event)}
+            data = movim.periodos(event)
+
         elif cRuta == PATH_SALDO_CTABANCO:
-            resp = {"records": ctaBanco.saldo(event)}
+            data = ctaBanco.saldo(event)
         elif cRuta == PATH_TOTAL_CTACONTAB:
-            resp = {"records": ctaContab.total(event)}
+            data = ctaContab.total(event)
+
         elif cRuta == PATH_UPLOAD:
-            resp = {"records": resumen.upload(event)}
+            data = resumen.upload(event)
+
         elif cRuta == PATH_USUARIO_ASIGNA:
-            resp = {"registros_procesados": usuario.asigna(event)}
+            data = usuario.asigna(event)
         elif cRuta == PATH_USUARIO_DESASIGNA:
-            resp = {"registros_procesados": usuario.desasigna(event)}
+            data = usuario.desasigna(event)
         elif cRuta == PATH_USUARIO_LOAD:
-            resp = {"registros_procesados": usuario.load(event)}
+            data = usuario.load(event)
         else:
             raise AppError("No existe la ruta: " + cRuta)
 
-        if not "success" in resp:
-            resp["success"] = True
+        resp = convertResp(data)
 
     except AppError as e:
-        resp = {"success": False, "message": str(e)}
+        resp = dict(success=False, message=str(e))
 
     except Exception as e:
         log.error(e)
         log.error(traceback.format_exc())
-        resp = {"success": False, "message": "Error inesperado:" + str(e)}
+        resp = dict(success=False, message="Error inesperado:" + str(e))
 
     log.debug("lambda_handler:Término", resp)
     return json.dumps(resp, default=u.object2json)

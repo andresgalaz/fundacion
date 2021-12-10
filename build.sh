@@ -5,3 +5,6 @@
 cd app
 fecha=$(date +"%Y%m%d_%H%M%S")
 zip ../fundacion_$fecha.zip cmp/*.py *.py --exclude __init__.py 
+
+cd ..
+aws lambda update-function-code --function-name fundacion --zip-file fileb://$PWD/fundacion_$fecha.zip

@@ -63,13 +63,17 @@ def update(event):
     nInstitucion = getParam(event, "institucion", obligatorio=True, tipo=int)
     cCodigo = getParam(event, "codigo", obligatorio=True)
     cNombre = getParam(event, "nombre", obligatorio=True)
+    bCargo = getParam(event, "acepta_cargos", obligatorio=True, tipo=bool)
+    bAbono = getParam(event, "acepta_abonos", obligatorio=True, tipo=bool)
 
     cnxDb = db.conecta()
     if not dm.leeInstitucion(cnxDb, bUno=True, pInstitucion=nInstitucion):
         raise AppError("No existe institución con ID={}".format(nInstitucion))
 
     try:
-        dm.updCtaContab(cnxDb, nCtaContab, nInstitucion, cCodigo, cNombre)
+        dm.updCtaContab(
+            cnxDb, nCtaContab, nInstitucion, cCodigo, cNombre, bAbono, bCargo
+        )
         cnxDb.commit()
     except Exception as e:
         cnxDb.rollback()

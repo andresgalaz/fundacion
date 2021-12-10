@@ -161,6 +161,23 @@ def str2date(cFecha):
             "^([1-9]|0[1-9]|1[0-9]|2[0-9]|3[0-1])(\.|-|/)([1-9]|0[1-9]|1[0-2])(\.|-|/)([0-9][0-9]|19[0-9][0-9]|20[0-9][0-9])$",
             cFecha,
         ):
+            return datetime.strptime(cFecha, "%d-%m-%Y").date()
+        elif re.search(
+            "^([0-9][0-9]|19[0-9][0-9]|20[0-9][0-9])(\.|-|/)([1-9]|0[1-9]|1[0-2])(\.|-|/)([1-9]|0[1-9]|1[0-9]|2[0-9]|3[0-1])$",
+            cFecha,
+        ):
+            return datetime.strptime(cFecha, "%Y-%m-%d").date()
+    except:
+        pass
+
+
+def str2datetime(cFecha):
+    try:
+        cFecha = cFecha.replace(".", "-").replace("/", "-")
+        if re.search(
+            "^([1-9]|0[1-9]|1[0-9]|2[0-9]|3[0-1])(\.|-|/)([1-9]|0[1-9]|1[0-2])(\.|-|/)([0-9][0-9]|19[0-9][0-9]|20[0-9][0-9])$",
+            cFecha,
+        ):
             return datetime.strptime(cFecha, "%d-%m-%Y")
         elif re.search(
             "^([0-9][0-9]|19[0-9][0-9]|20[0-9][0-9])(\.|-|/)([1-9]|0[1-9]|1[0-2])(\.|-|/)([1-9]|0[1-9]|1[0-9]|2[0-9]|3[0-1])$",
@@ -214,9 +231,17 @@ def str2periodo(cFecha):
         pass
 
 
+from time import sleep
+
+
 def strToS3(bucketS3, filename, contenido):
-    s3 = boto3.resource("s3")
-    s3.Bucket(bucketS3).put_object(Key=filename, Body=contenido)
+    s3 = boto3.client("s3")
+    s3.put_object(Bucket=bucketS3, Key=filename, Body=contenido)
+
+
+def deleteFromS3(bucketS3, filename):
+    s3 = boto3.client("s3")
+    s3.delete_object(Bucket=bucketS3, Key=filename)
 
 
 def isExcel(contenido):
@@ -254,9 +279,8 @@ def isExcelS3(cBucketName, cFileName):
     return isExcel(response["Body"].read())
 
 
-def parseExcel(cBucketName, cFileName):
-    excelfile = f"s3://{cBucketName}/{cFileName}"
-    df = pandas.read_excel(excelfile, header=None)
+def parseExcel(contenido):
+    df = pandas.read_excel(io.BytesIO(contenido), header=None)
     data = json.loads(df.to_json(orient="table"))["data"]
     # Convierte a Matriz
     M = []
@@ -281,10 +305,7 @@ def parseExcel(cBucketName, cFileName):
     return M
 
 
-def parseCsv(cBucketName, cFileName):
-    s3 = boto3.client("s3")
-    response = s3.get_object(Bucket=cBucketName, Key=cFileName)
-    contenido = response["Body"].read()
+def parseCsv(contenido):
     sAnalisis = str(contenido)
     lineas = sAnalisis.count("\\n")
     if sAnalisis.count(";") >= lineas:
@@ -292,7 +313,7 @@ def parseCsv(cBucketName, cFileName):
     elif sAnalisis.count("\\t") >= lineas:
         separador = "\t"
     else:
-        raise AppError("Separador de columnas desconocido en archivo:" * cFileName)
+        raise AppError("Separador de columnas desconocido en este archivo")
 
     df = pandas.read_csv(io.BytesIO(contenido), sep=separador, header=None)
     # return df
