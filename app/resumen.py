@@ -6,6 +6,7 @@ __version__ = "v1.0"
 
 import re
 from unicodedata import normalize
+from decimal import Decimal
 
 # Bibliorecas propias
 import config
@@ -184,7 +185,7 @@ def grabaResumen(cnxDb, cUsuario, nInstitucion, nBanco, cArchivo, contenido):
 
     # Archivo vacío
     if len(arrMovim) == 0:
-        raise AppError("No se puedo leer registros de movimientos dentro del archivo")
+        raise AppError("No se pudo leer registros de movimientos dentro del archivo")
 
     # Valida fecha y saldo inicial contra el último saldo de la cuenta bancaria
     (dMovimAnterior, nSaldoAnterior) = dm.getSaldoAnterior(cnxDb, fCtaBanco)
@@ -238,7 +239,9 @@ def grabaResumen(cnxDb, cUsuario, nInstitucion, nBanco, cArchivo, contenido):
         cNombreS3=cArchivoS3,
         cUsuario=cUsuario,
         dInicio=arrMovim[0]["dMovim"],
-        nSaldoInicio=arrMovim[0]["nSaldo"],
+        nSaldoInicio=arrMovim[0]["nSaldo"]
+        - arrMovim[0]["nAbono"]
+        + arrMovim[0]["nCargo"],
         dTermino=arrMovim[-1:][0]["dMovim"],
         nSaldoTermino=arrMovim[-1:][0]["nSaldo"],
     )
@@ -252,6 +255,8 @@ def grabaResumen(cnxDb, cUsuario, nInstitucion, nBanco, cArchivo, contenido):
             fCtaBanco=fCtaBanco,
             **mov
         )
+
+    return fArchivo
 
 
 def upload(event):

@@ -194,28 +194,34 @@ def leeArchivo(
     params = ()
 
     if pArchivo:
-        cWhe += " AND pArchivo = %s "
+        cWhe += " AND a.pArchivo = %s "
         params += (pArchivo,)
     if fInstitucion:
-        cWhe += " AND fInstitucion = %s "
+        cWhe += " AND a.fInstitucion = %s "
         params += (fInstitucion,)
     if fCtaBanco:
-        cWhe += " AND fCtaBanco = %s "
+        cWhe += " AND a.fCtaBanco = %s "
         params += (fCtaBanco,)
     if cNombre:
-        cWhe += " AND upper(cNombre) like %s "
+        cWhe += " AND upper(a.cNombre) like %s "
         params += ("%" + cNombre + "%",)
     if dMovim:
         # dMovim debe estar entre la fecha de Inicio y termino del archivo
-        cWhe += " AND %s BETWEEN dInicio AND dTermino "
+        cWhe += " AND %s BETWEEN a.dInicio AND a.dTermino "
         params += (dMovim,)
 
     arr = db.sqlQuery(
-        """SELECT pArchivo , fInstitucion, fCtaBanco, cNombre     , cNombreS3
-                , cUsuario , dInicio     , dTermino , nSaldoInicio, nSaldoTermino
-                , tCreacion   
-           FROM tArchivo
-           WHERE """
+        """
+        SELECT a.pArchivo     , a.fInstitucion, a.cNombre  , a.cNombreS3
+             , a.cUsuario     , a.dInicio     , a.dTermino , a.nSaldoInicio
+             , a.nSaldoTermino, a.tCreacion   
+             , a.fCtaBanco    , c.cNombre     cNombreCuenta, c.cCuenta
+             , b.cNombre cBanco
+        FROM   tArchivo a
+        INNER JOIN tCtaBanco c ON c.pCtaBanco = a.fCtaBanco
+        INNER JOIN tBanco    b ON b.pBanco = c.fBanco
+        WHERE
+        """
         + cWhe,
         cnxDb=cnxDb,
         params=params,
@@ -490,7 +496,7 @@ def getSaldoAnterior(cnxDb, fCtaBanco, dFecCorte=None):
         params=params,
     )
     if arr:
-        return (arr[0]["dMovim"], arr[0]["nSaldo"])
+        return (arr[0]["dMovim"], float(arr[0]["nSaldo"]))
     return (None, 0)
 
 

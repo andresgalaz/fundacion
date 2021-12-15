@@ -51,6 +51,7 @@ def lista(event):
     nInstitucion = getParam(event, "institucion", obligatorio=True, tipo=int)
     nCtaBanco = getParam(event, "cuenta_banco", tipo=int)
     nCtaContab = getParam(event, "cuenta_contab", tipo=int)
+    nArchivo = getParam(event, "archivo", tipo=int)
     # Filtra movimientos con la cuenta contable asignada o no
     bAsignadas = getParam(event, "asignadas", tipo=bool)
     # Rango fechas o Periodo
@@ -69,6 +70,7 @@ def lista(event):
         dMovinIni=fechaIni,
         dMovinFin=fechaFin,
         bAsignadas=bAsignadas,
+        fArchivo=nArchivo,
     )
     cnxDb.close()
 
