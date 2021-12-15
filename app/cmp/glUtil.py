@@ -231,9 +231,6 @@ def str2periodo(cFecha):
         pass
 
 
-from time import sleep
-
-
 def strToS3(bucketS3, filename, contenido):
     s3 = boto3.client("s3")
     s3.put_object(Bucket=bucketS3, Key=filename, Body=contenido)

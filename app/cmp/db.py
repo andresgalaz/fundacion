@@ -11,7 +11,6 @@ from cmp.appError import AppError
 
 
 def conecta():
-    print("config", config)
     try:
         cnxDb = pymysql.connect(
             host=config.DB["host"],
@@ -22,20 +21,37 @@ def conecta():
         if not cnxDb:
             raise AppError("Error al conectar a la base de datos")
 
-        print("conecta DB")
         return cnxDb
     except pymysql.Error as e:
-        print(e)
+        print("No se puedo concetar a la DB", str(e))
         raise AppError("Error inesperado al conectar: ") + str(e)
 
 
 def close(cnxDb):
-    print("Desconecta DB")
     try:
         if cnxDb:
             cnxDb.close()
     except pymysql.Error as e:
         pass
+
+
+def sqlQuerySingle(cSql, cnxDb=None, cursor=None, params=None):
+    bCloseCursor = False
+    if not cursor:
+        cursor = cnxDb.cursor()
+        bCloseCursor = True
+
+    cursor.execute(cSql, params)
+    data = cursor.fetchall()
+    if not data:
+        if bCloseCursor:
+            cursor.close()
+        return None
+
+    if bCloseCursor:
+        cursor.close()
+
+    return data[0][0]
 
 
 def sqlQuery(cSql, cnxDb=None, cursor=None, params=None):

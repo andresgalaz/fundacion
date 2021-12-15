@@ -28,7 +28,6 @@ def multipart(event):
     msg = email.message_from_bytes(ct.encode() + post_data)
 
     # verifica si es multipart
-    print("Multipart check : ", msg.is_multipart())
     if msg.is_multipart():
         multipart_content = {}
         # recupera pares nombre y valor de los campos de form-data
@@ -51,7 +50,6 @@ def multipart(event):
                 bytes = part.get_payload(decode=True)
                 charset = part.get_content_charset("utf-8")
                 valor = bytes.decode(charset, "replace")
-                # print(nombre,':',valor)
                 multipart_content[nombre] = valor
 
         # Upload OK

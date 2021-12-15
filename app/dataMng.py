@@ -498,85 +498,37 @@ def saldoCtaBanco(cnxDb, fInstitucion, dPeriodo=None, fCtaBanco=None):
     if not dPeriodo:
         raise AppError("Falta parámetro periodo")
 
-    cWheOn = " AND m.dMovim >= %s AND m.dMovim <= %s "
-    params = (dPeriodo.inicio(), dPeriodo.termino())
-
-    cWhe = " c.fInstitucion = %s "
-    params += (fInstitucion,)
-
+    cWhe = " fInstitucion = %s "
+    params = (fInstitucion,)
     if fCtaBanco:
-        cWhe += " AND c.fCtaBanco = %s "
+        cWhe += " AND fCtaBanco = %s "
         params += (fCtaBanco,)
 
-    arr = db.sqlQuery(
-        """SELECT c.pCtaBanco, c.fInstitucion, c.fBanco, c.cNombre, c.cCuenta
-                , m.pMovim, m.fCtaContab, m.dMovim, m.nSaldo
-            FROM  tCtaBanco c
-                  LEFT OUTER JOIN tMovim m ON m.fCtaBanco = c.pCtaBanco {}
-            WHERE {}
-            ORDER BY c.pCtaBanco, m.dMovim DESC, m.pMovim DESC
+    arrSaldo = db.sqlQuery(
+        """SELECT pCtaBanco, fInstitucion, fBanco, cNombre, cCuenta
+           FROM   tCtaBanco 
+           WHERE  {}
+           ORDER  BY pCtaBanco
         """.format(
-            cWheOn, cWhe
+            cWhe
         ),
         cnxDb=cnxDb,
         params=params,
     )
-    if not arr:
+    if not arrSaldo:
         return None
 
-    if len(arr) == 1:
-        return arr
-
-    arrSaldo = []
-    i = 0
-    while i < len(arr):
-        reg1 = arr[i]
-        # Asigna el primer registro que es el último saldo porque está
-        # ordenado descendente
-        reg0 = reg1
-        i += 1
-        nCount = 0
-        nNoAsig = 0
-        while i < len(arr) and reg0["pCtaBanco"] == reg1["pCtaBanco"]:
-            reg1 = arr[i]
-            i += 1
-            nCount += 1
-            if reg1["fCtaContab"] == None:
-                nNoAsig += 1
-
-        if reg0["nSaldo"] == None:
-            # Quiere decir que no hay regitros para la cuenta en el periodo.
-            # Se obtiene el saldo del periodo anterior mas próximo
-            (dMovim, reg0["nSaldo"]) = getSaldoAnterior(
-                cnxDb, reg0["pCtaBanco"], dPeriodo.inicio()
-            )
-
-        reg0["nCantidadMovim"] = nCount
-        reg0["nMovimNoAsignados"] = nNoAsig
-        arrSaldo.append(reg0)
-
-    # Condición de Borde, el último registro es uno solo de otra cuenta
-    if reg0["pCtaBanco"] != reg1["pCtaBanco"]:
-        if reg1["nSaldo"]:
-            reg1["nCantidadMovim"] = 1
-            if reg1["fCtaContab"] == None:
-                reg1["nMovimNoAsignados"] = 0
-            else:
-                reg1["nMovimNoAsignados"] = 1
-        else:
-            reg1["nCantidadMovim"] = 0
-            reg1["nMovimNoAsignados"] = 0
-            (dMovim, reg1["nSaldo"]) = getSaldoAnterior(
-                cnxDb, reg1["pCtaBanco"], dPeriodo.inicio()
-            )
-        arrSaldo.append(reg1)
-
-    # Elimina algunos campos que solo se utilizaron para manejar los cortes de control
-    cPeriodo = dPeriodo.strftime("%Y-%m")
-    for reg in arrSaldo:
-        del reg["pMovim"]
-        del reg["dMovim"]
-        reg["dPeriodo"] = cPeriodo
+    for i, cta in enumerate(arrSaldo):
+        mov = db.sqlQuery(
+            """SELECT count(*) nCantidadMovim, count(fCtaContab) nMovimNoAsignados
+           FROM   tMovim
+           WHERE  fCtaBanco = %s
+           AND    dMovim >= %s AND dMovim < %s
+        """,
+            cnxDb=cnxDb,
+            params=(cta["pCtaBanco"], dPeriodo.inicio(), dPeriodo.termino()),
+        )
+        arrSaldo[i] = {**cta, **mov[0]}
 
     return arrSaldo
 
