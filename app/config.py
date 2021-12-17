@@ -8,4 +8,4 @@ DB = {
     "database": "db_fundacion",
 }
 
-USER_POOL_COGNITO = "us-east-1_lN2kwuE5k"
+USER_POOL_COGNITO = "us-east-1_rq5zllIL7"

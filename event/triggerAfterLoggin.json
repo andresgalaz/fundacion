@@ -1,0 +1,22 @@
+{
+    "version": "1",
+    "region": "us-east-1",
+    "userPoolId": "us-east-1_rq5zllIL7",
+    "userName": "34ff625d-0ee7-4646-89d8-39756119c854",
+    "callerContext": {
+        "awsSdkVersion": "aws-sdk-unknown-unknown",
+        "clientId": "1ke9l5fait7c7517ibocme1eal"
+    },
+    "triggerSource": "PostAuthentication_Authentication",
+    "request": {
+        "userAttributes": {
+            "sub": "34ff625d-0ee7-4646-89d8-39756119c854",
+            "cognito:user_status": "CONFIRMED",
+            "email_verified": "true",
+            "name": "Andrés Galaz",
+            "email": "andres.galaz@gmail.com"
+        },
+        "newDeviceUsed": false
+    },
+    "response": {}
+}

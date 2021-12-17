@@ -39,6 +39,7 @@ PATH_PERIODOS = "/periodos"
 PATH_SALDO_CTABANCO = "/saldo_cta_banco"
 PATH_TOTAL_CTACONTAB = "/total_cta_contab"
 PATH_UPLOAD = "/upload"
+PATH_USUARIO = "/usuario"
 PATH_USUARIO_ASIGNA = "/usuario_asigna"
 PATH_USUARIO_DESASIGNA = "/usuario_desasigna"
 PATH_USUARIO_LOAD = "/usuario_load"
@@ -64,7 +65,7 @@ def lambda_handler(event, context):
     log = logging.getLogger("lambda_handler")
     log.debug("Fundaciones " + __version__)
     log.debug("lambda_handler:Inicio")
-    print(event)
+    print("lambda_handler:Inicio")
 
     try:
         cRuta = event["rawPath"]
@@ -113,6 +114,8 @@ def lambda_handler(event, context):
         elif cRuta == PATH_UPLOAD:
             data = resumen.upload(event)
 
+        elif cRuta == PATH_USUARIO:
+            data = usuario.lista(event)
         elif cRuta == PATH_USUARIO_ASIGNA:
             data = usuario.asigna(event)
         elif cRuta == PATH_USUARIO_DESASIGNA:
@@ -122,7 +125,7 @@ def lambda_handler(event, context):
         else:
             raise AppError("No existe la ruta: " + cRuta)
 
-        resp = convertResp(data)
+        resp = u.convertResponse(data)
 
     except AppError as e:
         resp = dict(success=False, message=str(e))

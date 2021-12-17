@@ -82,6 +82,22 @@ def csvLinesToMatriz(lines):
     return matriz
 
 
+def convertResponse(x):
+    if type(x) == dict:
+        if not "success" in x:
+            x["success"] = True
+        return x
+
+    resp = dict(success=True)
+    if type(x) == str:
+        resp["message"] = x
+    elif type(x) == int:
+        resp["registros_procesados"] = x
+    else:
+        resp["records"] = x
+    return resp
+
+
 def fechaIso(fecha=datetime.today(), formato="%Y%m%d_%H%M%S"):
     return datetime.strftime(fecha, formato)
 

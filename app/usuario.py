@@ -37,6 +37,22 @@ def asigna(event):
     return nCount
 
 
+def lista(event):
+    nInstitucion = getParam(event, "institucion", tipo=int)
+    nUsuario = getParam(event, "usuario", tipo=int)
+
+    cnxDb = db.conecta()
+    # se puede propocionar la id o el nombre de la cuenta contable
+    lis = dm.leeUsuarioInstitucion(cnxDb, nInstitucion, nUsuario)
+    cnxDb.commit()
+    cnxDb.close()
+
+    if not lis:
+        lis = []
+
+    return lis
+
+
 def desasigna(event):
     cBody = getParam(event, "body", obligatorio=True)
     # Dentro de body viene un JSON que se convirte en parámetros
@@ -68,6 +84,7 @@ def load(event):
     for usr in arrUsers:
         dm.updUsuario(cnxDb, **usr)
     cnxDb.commit()
+    lisUsr = dm.leeUsuarioInstitucion(cnxDb)
     cnxDb.close()
 
-    return len(arrUsers)
+    return lisUsr

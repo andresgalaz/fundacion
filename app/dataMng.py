@@ -437,6 +437,7 @@ def leeUsuario(
     cEmail=None,
     bEnable=None,
     cEstado=None,
+    pInstitucion=None,
 ):
     cWhe = " 1=1 "
     params = ()
@@ -458,6 +459,14 @@ def leeUsuario(
     if cEstado:
         cWhe += " AND cEmail = %s "
         params += (cEmail,)
+    if pInstitucion:
+        cWhe += """ AND EXISTS 
+                    ( SELECT 1 
+                      FROM  tInstitucionUsuario 
+                      WHERE pInstitucion=%s 
+                      AND   tInstitucionUsuario.pUsuario = tUsuario.pUsuario
+                    ) """
+        params += (cEmaipInstitucion,)
 
     arr = db.sqlQuery(
         "SELECT  pUsuario, cUsuario, cNombre, cEmail, bEnable, cEstado, tCreacion from tUsuario WHERE "
@@ -473,6 +482,33 @@ def leeUsuario(
         return arr[0]
 
     return arr
+
+
+def leeUsuarioInstitucion(cnxDb, pInstitucion=None, pUsuario=None):
+    lisUsr = leeUsuario(cnxDb, pUsuario=pUsuario)
+
+    cWhe = " iu.pUsuario = %s "
+    if pInstitucion:
+        cWhe += " AND iu.pInstitucion = %s "
+
+    cSql = """
+    SELECT  i.pInstitucion, i.cNombre, i.bEnable
+    FROM    tInstitucionUsuario iu 
+            INNER JOIN tInstitucion i ON i.pInstitucion = iu.pInstitucion
+    WHERE   {}""".format(
+        cWhe
+    )
+    for usr in lisUsr:
+        params = (usr["pUsuario"],)
+        if pInstitucion:
+            params += (pInstitucion,)
+
+        lisInst = db.sqlQuery(cSql, cnxDb=cnxDb, params=params)
+        if not lisInst:
+            lisInst = []
+        usr["instituciones"] = lisInst
+
+    return lisUsr
 
 
 def getSaldoAnterior(cnxDb, fCtaBanco, dFecCorte=None):
