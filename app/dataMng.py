@@ -484,8 +484,8 @@ def leeUsuario(
     return arr
 
 
-def leeUsuarioInstitucion(cnxDb, pInstitucion=None, pUsuario=None):
-    lisUsr = leeUsuario(cnxDb, pUsuario=pUsuario)
+def leeUsuarioInstitucion(cnxDb, pInstitucion=None, cUsuario=None):
+    lisUsr = leeUsuario(cnxDb, cUsuario=cUsuario)
 
     cWhe = " iu.pUsuario = %s "
     if pInstitucion:

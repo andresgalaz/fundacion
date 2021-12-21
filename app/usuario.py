@@ -39,11 +39,11 @@ def asigna(event):
 
 def lista(event):
     nInstitucion = getParam(event, "institucion", tipo=int)
-    nUsuario = getParam(event, "usuario", tipo=int)
+    cUsuario = getParam(event, "usuario")
 
     cnxDb = db.conecta()
     # se puede propocionar la id o el nombre de la cuenta contable
-    lis = dm.leeUsuarioInstitucion(cnxDb, nInstitucion, nUsuario)
+    lis = dm.leeUsuarioInstitucion(cnxDb, nInstitucion, cUsuario)
     cnxDb.commit()
     cnxDb.close()
 
